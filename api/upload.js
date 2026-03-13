@@ -1,22 +1,37 @@
-export default function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ message: "Method Not Allowed" });
+export default async function handler(req, res) {
+  // 1) CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  const fs = require("fs");
-  const path = require("path");
-  const filePath = path.join(process.cwd(), "data/images.json");
+  // 2) Handle OPTIONS
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  // 3) Only POST
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method Not Allowed" });
+  }
 
   try {
-    const body = req.body;
-    if (!body.url) return res.status(400).json({ message: "Missing URL" });
+    const { image } = req.body;
 
-    const raw = fs.readFileSync(filePath);
-    const images = JSON.parse(raw);
+    const cloudinary = require("cloudinary").v2;
 
-    images.push(body.url);
-    fs.writeFileSync(filePath, JSON.stringify(images, null, 2));
+    cloudinary.config({
+      cloud_name: process.env.CLOUD_NAME,
+      api_key: process.env.CLOUD_KEY,
+      api_secret: process.env.CLOUD_SECRET,
+    });
 
-    res.status(200).json({ ok: true });
+    const uploadResponse = await cloudinary.uploader.upload(image, {
+      folder: "mur_photos",
+    });
+
+    return res.status(200).json({ url: uploadResponse.secure_url });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
