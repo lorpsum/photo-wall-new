@@ -1,37 +1,33 @@
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 export default async function handler(req, res) {
-  // 1) CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  // 2) Handle OPTIONS
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  // 3) Only POST
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { image } = req.body;
+    const { image } = req.body; // ton front envoie base64
 
-    const cloudinary = require("cloudinary").v2;
+    if (!image) {
+      return res.status(400).json({ error: "No image provided" });
+    }
 
-    cloudinary.config({
-      cloud_name: process.env.CLOUD_NAME,
-      api_key: process.env.CLOUD_KEY,
-      api_secret: process.env.CLOUD_SECRET,
+    // Upload vers Cloudinary
+    const result = await cloudinary.uploader.upload(image, {
+      folder: "photo-wall", // toutes les images vont dans ce dossier
+      quality: "auto",
+      fetch_format: "auto",
     });
 
-    const uploadResponse = await cloudinary.uploader.upload(image, {
-      folder: "mur_photos",
-    });
-
-    return res.status(200).json({ url: uploadResponse.secure_url });
-
+    res.status(200).json({ url: result.secure_url });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 }
