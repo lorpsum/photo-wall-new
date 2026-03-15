@@ -10,6 +10,7 @@ export default async function handler(req, res) {
   try {
     const result = await cloudinary.api.resources({
       type: "upload",
+      prefix: "mur_photos",   // <-- ton dossier correct
       max_results: 100,
       sort_by: [{ field: "created_at", order: "desc" }]
     });
