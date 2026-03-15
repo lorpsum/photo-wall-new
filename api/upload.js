@@ -1,9 +1,9 @@
 import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_KEY,
+  api_secret: process.env.CLOUD_SECRET,
 });
 
 export default async function handler(req, res) {
@@ -12,19 +12,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { image } = req.body; // ton front envoie base64
+    const { image } = req.body; // base64 envoyé par Shopify
 
     if (!image) {
       return res.status(400).json({ error: "No image provided" });
     }
 
-    // Upload vers Cloudinary
+    // Upload vers Cloudinary dans le dossier "photo-wall"
     const result = await cloudinary.uploader.upload(image, {
-      folder: "photo-wall", // toutes les images vont dans ce dossier
+      folder: "photo-wall",
       quality: "auto",
       fetch_format: "auto",
     });
 
+    // Renvoie l'URL directe pour le front
     res.status(200).json({ url: result.secure_url });
   } catch (err) {
     console.error(err);
