@@ -1,36 +1,22 @@
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "GET") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
-
   try {
-    const cloudinary = require("cloudinary").v2;
+    // Récupère toutes les images uploadées dans le dossier "photo-wall" (ou racine si tu n'en mets pas)
+    const result = await cloudinary.api.resources({ type: "upload", prefix: "photo-wall", max_results: 100 });
 
-    cloudinary.config({
-      cloud_name: process.env.CLOUD_NAME,
-      api_key: process.env.CLOUD_KEY,
-      api_secret: process.env.CLOUD_SECRET,
-    });
+    // Transforme en tableau d'URLs
+    const images = result.resources.map(img => img.secure_url);
 
-    const result = await cloudinary.search
-      .expression("folder:mur_photos")
-      .sort_by("created_at", "desc")
-      .max_results(500)
-      .execute();
-
-    const images = result.resources.map(r => r.secure_url);
-
-    return res.status(200).json({ images });
-
+    res.status(200).json({ images });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 }
