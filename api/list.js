@@ -7,10 +7,21 @@ cloudinary.config({
 });
 
 export default async function handler(req, res) {
+  // 🔹 CORS : autoriser Shopify à fetcher depuis le navigateur
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // OPTIONS preflight request
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
+
   try {
     const result = await cloudinary.api.resources({
       type: "upload",
-      prefix: "mur_photos",   // <-- ton dossier correct
+      prefix: "mur_photos",   // ton dossier Cloudinary
       max_results: 100,
       sort_by: [{ field: "created_at", order: "desc" }]
     });
